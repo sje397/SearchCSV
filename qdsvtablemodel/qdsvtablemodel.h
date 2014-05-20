@@ -26,7 +26,7 @@
 //a template-based matrix to store 2D data
 template<class T>
 class QDsvMatrix {
-    QList<QList<T>> m_data;
+    QList< QList<T> > m_data;
     int m_rowCount;
     int m_columnCount;
 

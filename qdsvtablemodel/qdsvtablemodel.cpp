@@ -86,6 +86,7 @@ void checkString(QString &temp, QList<QString> &list, QDsvMatrix<QString> &data,
 
 bool QDsvTableModel::loadFromFile(const QString &fileName, const QChar &delim)
 {
+    beginResetModel();
     dsvMatrix.clear();
     QChar delimiter;
     QFile file(fileName);
@@ -125,7 +126,7 @@ bool QDsvTableModel::loadFromFile(const QString &fileName, const QChar &delim)
     }
 
     file.close();
-    reset();
+    endResetModel();
     return true;
 }
 

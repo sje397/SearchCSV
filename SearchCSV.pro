@@ -13,8 +13,15 @@ TEMPLATE = app
 
 
 SOURCES += main.cpp\
-        mainwindow.cpp
+        mainwindow.cpp \
+    qdsvtablemodel/qdsvtablemodel.cpp \
+    qcolumnsearchmodel.cpp
 
-HEADERS  += mainwindow.h
+HEADERS  += mainwindow.h \
+    qdsvtablemodel/qdsvtablemodel.h \
+    qcolumnsearchmodel.h
 
 FORMS    += mainwindow.ui
+
+OTHER_FILES += \
+    test.csv
