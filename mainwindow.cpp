@@ -23,8 +23,6 @@ MainWindow::MainWindow(QWidget *parent) :
     wrap->setSourceModel(model);
     ui->tableView->setModel(wrap);
 
-    connect(ui->listWidget, SIGNAL(itemChanged(QListWidgetItem*)), this, SLOT(itemChanged(QListWidgetItem*)));
-
     QSettings settings;
     if(settings.contains(LAST_FILENAME)) {
         loadFile(settings.value(LAST_FILENAME).toString());
@@ -58,16 +56,18 @@ void MainWindow::loadFile(const QString &filename)
     wrap->reset();
 
     ui->listWidget->clear();
-    QListWidgetItem *item = new QListWidgetItem("All", ui->listWidget);
-    item->setFlags(item->flags() | Qt::ItemIsUserCheckable);
-    item->setCheckState(Qt::Checked);
-    item->setData(Qt::UserRole, -1);
 
+    QSettings settings;
     for(int i = 0; i < model->columnCount(QModelIndex()); ++i) {
-        item = new QListWidgetItem(QString("Column %1").arg(i + 1), ui->listWidget);
-        item->setFlags(item->flags() | Qt::ItemIsUserCheckable);
+        // column names stored in settings under keys of the form "<filename>.Col<i>"
+        const QString key = QString("%1.Col%2").arg(filename).arg(i);
+        const QString label( settings.value(key, QString("Column %1").arg(i + 1) ).toString() );
+        wrap->setHeaderData(i, Qt::Horizontal, label);
+        QListWidgetItem *item = new QListWidgetItem(label);
+        item->setFlags(item->flags() | Qt::ItemIsUserCheckable | Qt::ItemIsEditable);
         item->setCheckState(Qt::Checked);
         item->setData(Qt::UserRole, i);
+        ui->listWidget->addItem(item);
     }
 }
 
@@ -76,17 +76,25 @@ void MainWindow::on_pushButton_clicked()
     wrap->setFilterRegExp("");
 }
 
-void MainWindow::itemChanged(QListWidgetItem *item)
+void MainWindow::on_checkAll_toggled(bool checked)
 {
-    int col = item->data(Qt::UserRole).toInt();
-    if(col >= 0) {
-        wrap->enableColumn(col, item->checkState() == Qt::Checked);
-    } else {
-        bool checked = item->checkState() == Qt::Checked;
-        wrap->enableAllColumns(checked);
-        for(int i = 0; i < ui->listWidget->count(); ++i) {
-            QListWidgetItem *it = ui->listWidget->item(i);
-            it->setCheckState(checked ? Qt::Checked : Qt::Unchecked);
-        }
+    wrap->enableAllColumns(checked);
+    for(int i = 0; i < ui->listWidget->count(); ++i) {
+        QListWidgetItem *it = ui->listWidget->item(i);
+        it->setCheckState(checked ? Qt::Checked : Qt::Unchecked);
+    }
+}
+
+void MainWindow::on_listWidget_itemChanged(QListWidgetItem *item)
+{
+    const int col = item->data(Qt::UserRole).toInt();
+    wrap->enableColumn(col, item->checkState() == Qt::Checked);
+
+    QSettings settings;
+    if(settings.contains(LAST_FILENAME)) {
+        const QString filename = settings.value(LAST_FILENAME).toString();
+        const QString key = QString("%1.Col%2").arg(filename).arg(col);
+        QSettings().setValue(key, item->text());
+        wrap->setHeaderData(col, Qt::Horizontal, item->text());
     }
 }

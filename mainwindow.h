@@ -24,11 +24,11 @@ public:
 
 private slots:
     void on_lineEdit_textEdited(const QString &arg1);
-
     void on_actionImport_CSV_triggered();
-
     void on_pushButton_clicked();
-    void itemChanged(QListWidgetItem *item);
+    void on_checkAll_toggled(bool checked);
+    void on_listWidget_itemChanged(QListWidgetItem *item);
+
 private:
     void loadFile(const QString &filename);
 

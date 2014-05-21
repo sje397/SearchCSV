@@ -1,7 +1,5 @@
 #include "qcolumnsearchmodel.h"
 
-#include <QDebug>
-
 QColumnSearchModel::QColumnSearchModel(QObject *parent) :
     QSortFilterProxyModel(parent)
 {
@@ -31,8 +29,28 @@ void QColumnSearchModel::reset()
 {
     beginResetModel();
     mapEnabled.clear();
+    mapNames.clear();
     enableAllColumns(true);
     endResetModel();
+}
+
+QVariant QColumnSearchModel::headerData(int section, Qt::Orientation, int role) const
+{
+    if(role == Qt::DisplayRole) {
+        if(mapNames.contains(section)) return mapNames[section];
+        return QString("Column %1").arg(section + 1);
+    }
+    return QVariant();
+}
+
+bool QColumnSearchModel::setHeaderData(int section, Qt::Orientation orientation, const QVariant &value, int role)
+{
+    if(role == Qt::EditRole) {
+        mapNames[section] = value.toString();
+        emit headerDataChanged(orientation, section, section);
+        return true;
+    }
+    return false;
 }
 
 bool QColumnSearchModel::filterAcceptsRow(int source_row, const QModelIndex &) const
