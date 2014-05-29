@@ -9,8 +9,21 @@ QColumnSearchModel::QColumnSearchModel(QObject *parent) :
 
 void QColumnSearchModel::enableColumn(int column, bool enable)
 {
+    if(enable != mapEnabled[column])
+    {
+        beginResetModel();
+        mapEnabled[column] = enable;
+        endResetModel();
+    }
+}
+
+void QColumnSearchModel::enableAllColumns(bool enable)
+{
     beginResetModel();
-    mapEnabled[column] = enable;
+    const int cols = sourceModel()->columnCount();
+    for(int i = 0; i < cols; ++i) {
+        mapEnabled[i] = enable;
+    }
     endResetModel();
 }
 
@@ -18,6 +31,7 @@ void QColumnSearchModel::reset()
 {
     beginResetModel();
     mapEnabled.clear();
+    enableAllColumns(true);
     endResetModel();
 }
 
@@ -27,15 +41,12 @@ bool QColumnSearchModel::filterAcceptsRow(int source_row, const QModelIndex &) c
     if(rex.isEmpty()) return true;
 
     QAbstractItemModel *source = sourceModel();
-    qDebug() << "Looking at row" << source_row << "with regex" << rex;
-    for(int i = 0; i < source->columnCount(); ++i) {
+    const int cols = source->columnCount();
+    for(int i = 0; i < cols; ++i) {
         bool columnEnabled = (!mapEnabled.contains(i) || mapEnabled[i]);
         if(columnEnabled)
         {
-            qDebug() << "Column" << i << "enabled.";
             QString content = source->data(source->index(source_row, i)).toString();
-            int index = rex.indexIn(content);
-            qDebug() << "Column" << i << "content:" << content << "index:" << index;
             if(rex.indexIn(content) >= 0) {
                 return true;
             }

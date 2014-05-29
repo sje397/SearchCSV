@@ -10,6 +10,7 @@ class QColumnSearchModel : public QSortFilterProxyModel
 public:
     explicit QColumnSearchModel(QObject *parent = 0);
     void enableColumn(int column, bool enable);
+    void enableAllColumns(bool enable);
     void reset();
 signals:
 

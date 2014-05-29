@@ -3,7 +3,12 @@
 
 #include <QFileDialog>
 #include <QListWidgetItem>
+#include <QSettings>
 #include <QDebug>
+
+namespace {
+const QString LAST_FILENAME("LastFilename");
+}
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -17,6 +22,13 @@ MainWindow::MainWindow(QWidget *parent) :
     wrap->setFilterKeyColumn(-1); // all cols
     wrap->setSourceModel(model);
     ui->tableView->setModel(wrap);
+
+    connect(ui->listWidget, SIGNAL(itemChanged(QListWidgetItem*)), this, SLOT(itemChanged(QListWidgetItem*)));
+
+    QSettings settings;
+    if(settings.contains(LAST_FILENAME)) {
+        loadFile(settings.value(LAST_FILENAME).toString());
+    }
 }
 
 MainWindow::~MainWindow()
@@ -31,20 +43,32 @@ void MainWindow::on_lineEdit_textEdited(const QString &arg1)
 
 void MainWindow::on_actionImport_CSV_triggered()
 {
-    QString fileName = QFileDialog::getOpenFileName(this,
-         tr("Open CSV"), "", tr("CSV Files (*.csv)"));
-    model->loadFromFile(fileName);
+    QString filename = QFileDialog::getOpenFileName(this, tr("Open CSV"), "", tr("CSV Files (*.csv)"));
+    if(!filename.isEmpty()) {
+        loadFile(filename);
+        QSettings().setValue(LAST_FILENAME, filename);
+    }
+}
+
+void MainWindow::loadFile(const QString &filename)
+{
+    model->loadFromFile(filename);
     ui->tableView->resizeColumnsToContents();
 
-    ui->listWidget->clear();
     wrap->reset();
+
+    ui->listWidget->clear();
+    QListWidgetItem *item = new QListWidgetItem("All", ui->listWidget);
+    item->setFlags(item->flags() | Qt::ItemIsUserCheckable);
+    item->setCheckState(Qt::Checked);
+    item->setData(Qt::UserRole, -1);
+
     for(int i = 0; i < model->columnCount(QModelIndex()); ++i) {
-        QListWidgetItem *item = new QListWidgetItem(QString("Column %1").arg(i), ui->listWidget);
-        item->setFlags(item->flags() | Qt::ItemIsUserCheckable); // set checkable flag
-        item->setCheckState(Qt::Checked); // AND initialize check state
-        item->setData(Qt::UserRole, QVariant(i));
+        item = new QListWidgetItem(QString("Column %1").arg(i + 1), ui->listWidget);
+        item->setFlags(item->flags() | Qt::ItemIsUserCheckable);
+        item->setCheckState(Qt::Checked);
+        item->setData(Qt::UserRole, i);
     }
-    connect(ui->listWidget, SIGNAL(itemChanged(QListWidgetItem*)), this, SLOT(itemChanged(QListWidgetItem*)));
 }
 
 void MainWindow::on_pushButton_clicked()
@@ -54,6 +78,15 @@ void MainWindow::on_pushButton_clicked()
 
 void MainWindow::itemChanged(QListWidgetItem *item)
 {
-    wrap->enableColumn(item->data(Qt::UserRole).toInt(), item->checkState() == Qt::Checked);
-    //wrap->setFilterRegExp(ui->lineEdit->text());
+    int col = item->data(Qt::UserRole).toInt();
+    if(col >= 0) {
+        wrap->enableColumn(col, item->checkState() == Qt::Checked);
+    } else {
+        bool checked = item->checkState() == Qt::Checked;
+        wrap->enableAllColumns(checked);
+        for(int i = 0; i < ui->listWidget->count(); ++i) {
+            QListWidgetItem *it = ui->listWidget->item(i);
+            it->setCheckState(checked ? Qt::Checked : Qt::Unchecked);
+        }
+    }
 }

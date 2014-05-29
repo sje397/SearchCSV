@@ -30,6 +30,8 @@ private slots:
     void on_pushButton_clicked();
     void itemChanged(QListWidgetItem *item);
 private:
+    void loadFile(const QString &filename);
+
     Ui::MainWindow *ui;
     QColumnSearchModel *wrap;
     QDsvTableModel *model;
